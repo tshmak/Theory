@@ -1,0 +1,574 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Beamer Presentation
+% LaTeX Template
+% Version 1.0 (10/11/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND THEMES
+%----------------------------------------------------------------------------------------
+
+\documentclass{beamer}
+
+\mode<presentation> {
+	
+	% The Beamer class comes with a number of default slide themes
+	% which change the colors and layouts of slides. Below this is a list
+	% of all the themes, uncomment each in turn to see what they look like.
+	
+	%\usetheme{default}
+	%\usetheme{AnnArbor}
+	%\usetheme{Antibes}
+	%\usetheme{Bergen}
+	%\usetheme{Berkeley}
+	%\usetheme{Berlin}
+	%\usetheme{Boadilla}
+	%\usetheme{CambridgeUS}
+	%\usetheme{Copenhagen}
+	%\usetheme{Darmstadt}
+	%\usetheme{Dresden}
+	%\usetheme{Frankfurt}
+	%\usetheme{Goettingen}
+	%\usetheme{Hannover}
+	%\usetheme{Ilmenau}
+	%\usetheme{JuanLesPins}
+	%\usetheme{Luebeck}
+	\usetheme{Madrid}
+	%\usetheme{Malmoe}
+	%\usetheme{Marburg}
+	%\usetheme{Montpellier}
+	%\usetheme{PaloAlto}
+	%\usetheme{Pittsburgh}
+	%\usetheme{Rochester}
+	%\usetheme{Singapore}
+	%\usetheme{Szeged}
+	%\usetheme{Warsaw}
+	
+	% As well as themes, the Beamer class has a number of color themes
+	% for any slide theme. Uncomment each of these in turn to see how it
+	% changes the colors of your current slide theme.
+	
+	%\usecolortheme{albatross}
+	%\usecolortheme{beaver}
+	%\usecolortheme{beetle}
+	%\usecolortheme{crane}
+	%\usecolortheme{dolphin}
+	%\usecolortheme{dove}
+	%\usecolortheme{fly}
+	%\usecolortheme{lily}
+	%\usecolortheme{orchid}
+	%\usecolortheme{rose}
+	%\usecolortheme{seagull}
+	%\usecolortheme{seahorse}
+	%\usecolortheme{whale}
+	%\usecolortheme{wolverine}
+	
+	%\setbeamertemplate{footline} % To remove the footer line in all slides uncomment this line
+	\setbeamertemplate{footline}[page number] % To replace the footer line in all slides with a simple slide count uncomment this line
+	
+	\setbeamertemplate{navigation symbols}{} % To remove the navigation symbols from the bottom of all slides uncomment this line
+}
+
+\usepackage{graphicx} % Allows including images
+\usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule in tables
+%\usepackage {tikz}
+%\usepackage {xcolor}
+\definecolor {processblue}{cmyk}{0.96,0,0,0}
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\title[]{The Information Bottleneck Principle and Deep Learning} % The short title appears at the bottom of every slide, the full title is only on the title page
+
+\author{Timothy Mak} % Your name
+\institute[Fano Labs] % Your institution as it will appear on the bottom of every slide, may be shorthand to save space
+{
+	Fano Labs, Hong Kong \\ % Your institution for the title page
+	\medskip
+}
+\date{6/8/2019} % Date, can be changed to a custom date
+\DeclareMathOperator{\E}{\mathbb{E}}
+
+
+\begin{document}
+	
+	\begin{frame}
+	\titlepage % Print the title page as the first slide
+	\end{frame}
+
+\begin{frame}
+Ideas taken from 3 main papers from Naftali Tishby (Hebrew University) and colleagues 
+\begin{itemize}
+	\item Tishby and Zaslavsky (2015) \url{https://arxiv.org/abs/1503.02406}
+	\item{} [unpublished] Shwartz-Ziv and Tishby (2017) \url{https://arxiv.org/abs/1703.00810}
+	\item{} [unpublished] Shwartz-Ziv, Painsky, and Tishby (2018) \url{https://openreview.net/forum?id=SkeL6sCqK7}
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Overview} % Table of contents slide, comment this block out to remove it
+\tableofcontents % Throughout your presentation, if you choose to use \section{} and \subsection{} commands, these will automatically be printed on this slide as an overview of your presentation
+\end{frame}
+
+%----------------------------------------------------------------------------------------
+%	PRESENTATION SLIDES
+%----------------------------------------------------------------------------------------
+
+%------------------------------------------------
+
+\section{A non-technical overview}
+\begin{frame}{A non-technical overview}
+\begin{itemize}
+	\item The quantity $I(X;Y)$ is called the \emph{mutual information} (MI) between random variables $X$ and $Y$, and can be thought of as a general measure of \emph{dependence} between the two variables. The higher it is, the more dependent (correlated) the two variables are. 
+	\item In general prediction problems, we are interested in finding a representation $\hat{X}$ of our data $X$ 
+	\item The \emph{Information Bottleneck} (IB) principle is that we find $\hat{X} := h(X)$ so as to maximize $I(\hat{X};Y)$ while minimize $I(\hat{X};X)$, where $Y$ is the label of our data. In other words we find the best function $h$ over all possible $h$ as constrained by our neural network setup. 
+	\item It is intuitive that maximizing $I(\hat{X};Y)$ should lead to improved prediction performance. However, Tishby and colleagues showed that minimizing $I(\hat{X};X)$ is also associated with better prediction performance. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{A non-technical overview}
+\begin{itemize}
+	\item What Tishby and colleagues showed was that what deep learning (DL) is doing via stochastic gradient descent (SGD) is that it is minimizing over the IB loss function $I(\hat{X};X) - \beta I(\hat{X};Y)$, somewhat unwittingly, which explains its good performance.
+	\item SGD is key to the success. We can't replace with another non-stochastic optimizer. 
+	\item If we trace $I(\hat{X};X)$ and $I(\hat{X};Y)$ as we train our Neural Network (NN), we find that there are two phases: The first phase is characterized by an increase in $I(\hat{X};Y)$ whereas the second phase is characterized by a decrease in $I(\hat{X};X)$. The second phase is much longer than the first. 
+	\item SGD, by its ``stochastic'' nature, decouples $\hat{X}$ from $X$, leading to a decrease in $I(\hat{X};X)$. 
+	\item In practice, if we are happy with our strategy in estimating $I(\hat{X};X)$ and $I(\hat{X};Y)$, we can see whether our NN has ``converged'' to its optimal state. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{An illustration}
+	\url{https://www.youtube.com/watch?v=P1A1yNsxMjc&feature=youtu.be}. 
+\end{frame}
+
+\begin{frame}{Recent results from another group (Cheng et al, 2019)}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\linewidth]{entropy-21-00456-g005}
+	%\caption{}
+	\label{fig:entropy-21-00456-g005}
+\end{figure}
+\end{frame}
+
+
+\section{Deep learning and Artificial Neural Networks}
+\begin{frame}{Deep learning and Artificial Neural Networks}
+\begin{itemize}
+	\item Suppose the relationship between our data $X$ and labels $Y$ is given by the equation $Y = f(X) + \varepsilon$. 
+	\item We do not know $f()$ so we try to estimate it with some function $\hat{f}(X; \boldsymbol{\theta})$
+	\item The goal of \emph{training} is to try to find good values of $\boldsymbol{\theta}$. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Basic concepts}
+\begin{itemize}
+	\item The \emph{conditional entropy} of $Y$ given $X$ represents the \emph{residual} randomness of $Y$ given knowledge of $X$. 
+	\item Formally, $H(Y|X)= -\sum_{X,Y} p(x_i,y_i) \log p(y_i | x_i)$. Importantly,  $H(Y|X) \neq -\sum_{Y} p(y_i|x_i) \log p(y_i | x_i)$.
+	\item The \emph{mutual information} $I(X;Y)$ is given by
+	$I(X;Y) = H(X) - H(X|Y) = H(Y) - H(Y|X)$. Importantly, it is \emph{symmetric}. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Basic concepts}
+\begin{itemize}
+	\item The Kullback-Liebler divergence $D_{KL}(p||q)$ is a measure of how two distributions differ from one another.
+	\item Formally, it is defined as $D_{KL}(p(X)||q(X)) = \sum_{X} p(x_i) \log \frac{p(x_i)}{q(x_i)}$. Importantly, it is \emph{asymmetric} and is thus not a proper distance measure. It is also lower bounded by 0. 
+	\item The \emph{mutual information} is formally defined as $I(X;Y)=D_{KL}(p(X,Y)||p(X)p(Y))$. Thus, you can think of it as how far two variables are from independence. 
+	\item $I(X;Y)$ is bounded by 0 and $\min (H(X), H(Y))$
+	\item The Mutual Information (MI) is invariant to invertible transformation, as is the entropy. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{A note on continuous variables}
+	\begin{itemize}
+		\item Even though the entropy is defined only for discrete variables, there is an analogous measure for continuous variables called the \emph{differential entropy}, defined as 
+		\[
+			H(X) = - \int f(x) \log f(x) dx
+		\]
+		\item Although the definition is similar to the discrete case, the differential entropy does not share all the properties of entropy. Most spectacularly, while the entropy is strictly non-negative, the differential entropy can be negative. 
+		\item However, the properties of the KL divergence and the MI are much better shared between discrete and continuous variables. 
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{A note on continuous variables}
+\begin{itemize}
+	\item Importantly, the MI for two continous variables can be thought of as the limit of the MI for two discrete variables which are \emph{quantization} (i.e. binning) of the original variables. 
+	\item Thus although the limit of quantization is a variable with infinite entropy, the mutual information of two such variables remains finite. 
+	\item Because of the invariance to invertible transformation, MI for continuous variables is also invariant to scaling, even though the differential entropy is. 
+	\item MI $= \infty$ for perfectly correlated continuous variables
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Cardinality}
+\begin{itemize}
+	\item The \emph{cardinality} of a discrete r.v. (random variable) $X$ is usually denoted by $|\mathcal{X}|$ where $\mathcal{X}$ denotes the set of possible values of $X$. It's simply the size of the set $\mathcal{X}$. 
+	\item For discrete variables, the maximum entropy for a given $|\mathcal{X}|$ is given by the uniform distribution. In this case, $H(X) = \log |\mathcal{X}|$. 
+	\item More generally, therefore, we have $H(X) \leq \log |\mathcal{X}|$. 
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}{The Asymptotic Equipartition Property (AEP)}
+\begin{itemize}
+	\item For a sequence of i.i.d. r.v. $\boldsymbol{X} = X_1,\ldots, X_n$, $\log p(\boldsymbol{X}) = \sum_i^n \log p(X_i)$. 
+	\item For large $n$, the central limit theorem means that $\log p(\boldsymbol{X})/n$ ``concentrates'' around $\E \log p(\boldsymbol{X})=-H(\boldsymbol{X})$
+	\item We can define a ``typical'' set of $\boldsymbol{X}$, $\mathcal{A}=\{\boldsymbol{X}: H(\boldsymbol{X}) - \epsilon \leq -\log p(\boldsymbol{X}) /n \leq H(\boldsymbol{X}) + \epsilon \}$
+	\item For all $\epsilon \in (0,1)$, $p(\boldsymbol{X} \in \mathcal{A}) \rightarrow 1$ as $n \rightarrow \infty$. 
+	\item In a lot of proofs, people restrict themselves to the consideration of these ``typical'' $\boldsymbol{X}$ only, and say with probability (confidence) $1-\delta = p(\boldsymbol{X} \in \mathcal{A})$, something holds. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The Asymptotic Equipartition Property (AEP)}
+	\begin{itemize}
+		\item Moreover, because all the typical $\boldsymbol{X}$ have roughly the same log likelihood, i.e. $p(\boldsymbol{X}_j) \approx 2^{-nH(X)}$, and $p(\boldsymbol{X} \in \mathcal{A}) \approx 1$, then the total number of ``typical'' elements is approximately $1/2^{-nH(X)} = 2^{nH(X)}$. This is the ``equipartition'' part of the AEP. 
+		\item In this case, instead of considering $|\mathcal{X}|^n$ elements, we only need to consider $2^{nH(X)}$ elements, which can be a much smaller subset. 
+		\item Note that in the case of the Uniform distribution, the two are the same.
+		\item{} [Advanced] The AEP property can be applied to long ergodic sequences also. Thus, if $\boldsymbol{X}=\{X_1, \ldots, X_n \}$ is one such sequence, then $p(\boldsymbol{X}_j) \approx 2^{-H(\boldsymbol{X})}$ for all $\boldsymbol{X}_j \in \mathcal{A}$. This is especially relevant for real world signals such as images and speech. 
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{The Asymptotic Equipartition Property (AEP)}
+\begin{itemize}
+	\item The AEP has important implications for data compression. In the naive approach, we need $\log |\mathcal{X}|$ bits to compress every $X$ in our data. The AEP means that if we define a large dictionary of ``typical'' sequences of $X$, we can compress by roughly $H(X)$ per $X$. 
+	\item In \emph{lossless} compression, we use extra bits to code the ``atypical'' sequences. In \emph{lossy} compression, one approach is simply ignore these atypical sequences. 
+\end{itemize}
+\end{frame}
+
+\section{Rate-distortion theory}
+\begin{frame}{Rate-distortion theory}
+\begin{itemize}
+	\item Rate-distortion theory has to do with lossy compression. The \emph{rate} is defined by $R = \frac{\log M}{n}$ where $\log M$ is the number of bits used to encode $n$ pieces of information (i.e. $X^{(n)}=\{X_1, \ldots, X_n \}$). 
+	\item The distortion is a measure of how far the ``decoded'' message differs from the original. Perhaps the following diagram would help: 
+	\[  
+		X^{(n)} \overset{\text{encoding}}{\rightarrow} Z^{(n)} \overset{\text{decoding}}{\rightarrow}  \hat{X}^{(n)}
+	\]
+	\item The distortion is a function $d(\hat{X},X)$ which measures how far $\hat{X}$ is from $X$. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Rate-distortion theory}
+\begin{itemize}
+	\item 	The \emph{rate-distortion function} relates the \emph{rate} of a code to the maximum expected distortion, i.e. 
+	\[
+	R(D) = \underset{\substack{\hat{X}: \E_{X, \hat{X}} d(X, \hat{X}) \leq D \\ M, n \in \mathbb{N}}}{\min} R(\hat{X})
+	\]
+	where $\hat{X}$ is assumed to be a (possibly stochastic) function.
+	\item Particularly relevant for \emph{quantization}. For example, imagine $\mathcal{X} = \{0, 0.01, \ldots, 0.99, 1 \}$, $\hat{\mathcal{X}} = \{0, 0.1, \ldots, 0.9, 1 \}$
+	\item The \emph{rate-distortion theorem} states that $R(D)$ is in fact given by
+	\[
+			R(D) = \underset{\hat{X}: \E_{X, \hat{X}} d(X, \hat{X}) \leq D }{\min} I(X; \hat{X})
+	\]
+	\item It applies to continuous $X$ as well.
+	\item For discrete $X$, $R(D)$ can be derived using the Blahut-Arimoto algorithm. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Rate-distortion theory}
+	\begin{itemize}
+		\item $R(D)$ gives the absolute maximum compression (minimum rate) given a certain level of distortion. However, it doesn't mean this is achievable in practice. 
+		\item To achieve compression at minimum rate, usually it means either (1) compression with a stochastic rule, i.e. $p(\hat{X}|X)$ is not either 0 or 1, or (2) we have infinite $M, n$. Both of these strategies are not practical. 
+		\item Nonetheless, $R(D)$ has a number of useful properties: 
+		\begin{itemize}
+			\item $R(D)$ is strictly convex
+			\item $R(D) \geq 0$ (assuming $d(\hat{X}, X)$ is \emph{normalized})
+			\item $R(0) \leq H(X)$
+		\end{itemize}
+		which applies for bounded distortion measures. (It applies in some cases to unbounded measures too, apparently.)
+	\end{itemize}
+\end{frame}
+
+\section{The Information Bottleneck Principle}
+\begin{frame}{The Information Bottleneck Principle}
+\begin{itemize}
+	\item Another problem with the rate-distortion theory is that frequently, it is unclear what the distortion function $d(X, \hat{X})$ should be. 
+	\item In the above (quantization) example, we can use, for example, the squared loss function, in other applications, e.g. in clustering, it may not be clear, since we don't want to fix $\hat{\mathcal{X}}$ \emph{a priori}. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The Information Bottleneck Principle}
+\begin{itemize}
+	\item Tishby, Pereira, and Bialek (1999) proposed we use $-I(\hat{X}; Y)$ as the distortion measure. In this case, distortion is measured by (ir)relevance of $\hat{X}$ with respect to some variable $Y$. 
+	\item In this framework, given $p(X,Y)$ and $|\hat{\mathcal{X}}|$, we can solve for the best (most compressed) $\hat{X}$ (in terms of $p(\hat{X}|X)$, $p(Y|\hat{X})$) that summarizes information about $X$ that is \emph{relevant} to $Y$. 
+	\item This is called the ``information bottleneck'' because we are like squeezing $X$ through a bottleneck to retain information most relevant for $Y$. 
+	\item A numer of practical applications of the principle, in both supervised and unsupervised learning are given by Tishby's student, Noam Slonim. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Example 1: Unsupervised document clustering (Slonim et al, 2002)}
+\begin{itemize}
+	\item Let $\mathcal{X}$ be a set of documents and $\mathcal{Y}$ be a set of words found in the documents, such that $p(Y|X)$ is the distribution of words of a particular document. 
+	\item We are interested in grouping $X$ according to their distribution of words. Let $\hat{X}$ denote such a grouping.
+	\item The IB principle states that given $p(X,Y)$, we can obtain the best possible (most condense) grouping $p(\hat{X}|X)$ in terms of $I(\hat{X};X)$ for a given retention of information on $Y$, i.e. for a given $I(\hat{X};Y)$. 
+	\item Note that the $R(D)$ curve in this case does not give us \emph{hard} grouping, but \emph{soft} (stochastic) groupings. It also therefore doesn't tell us how big $|\mathcal{X}|$ is. $R(D)$ can be achieved by multiple possible $|\mathcal{X}|$ given stochastic rules. 
+	\item Nonetheless, we can set different $|\mathcal{X}|$ and solve for hard rules, and compare its compression rate relative to the theoretical minimum. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Example 2: Supervised word clustering (Slonim et al, 2000)}
+\begin{itemize}
+	\item Let $\mathcal{X}$ denote a set of words, $\mathcal{Y}$ denote various categories (e.g., different categories of webpages). 
+	\item We want to predict the category given a set of word (say found on a webpage). We could simply use $X$ to predict, or we could first summarize $X$ into a summary $\hat{X}$ (dimension reduction) before prediction. 
+	\item By applying the IB principle, we can work out $p(\hat{X}|X)$ and use the resulting variable $\hat{X}$ for prediction. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Deep Learning and the IB principle}
+\begin{itemize}
+	\item In a series of papers (give at the beginning of the slides), Tishby and colleagues argued that when we do deep learning via stochastic gradient descent (SGD), we are in effect solving for a predictor $\hat{X}$ using the IB principle.
+	\item However, unlike Slonim's approach, we are not talking about the empirical distribution $\hat{p}(X,Y)$, but the actual underlying distribution $p(X,Y)$. 
+	\item Moreover, the principle is supposed to apply to arbitrarily large problems, arbitrarily complicated networks, and we are not restricted to discrete $X$ and $Y$. 
+	\item The key factor for good predictive performance is in fact in SGD, although having ``deep'' networks improve convergence rates. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{So why does it make sense to optimize the IB functional?}
+\begin{itemize}
+	\item Recall Tishby's IB principle leads to what he calls the IB curve which essentially is the rate-distortion function with $-I(\hat{X};Y)$ as the distortion function 
+	\[
+		R(D) = \underset{\hat{X}: I(\hat{X};Y) \geq D }{\min} I(X; \hat{X})
+	\]
+	\item This can be written in the Lagrangian dual form as 
+	\[
+		\underset{\hat{X}}{\min}\ \mathcal{L}(\hat{X}) = I(\hat{X};X) - \beta I(\hat{X};Y)
+	\]
+	where there is a 1-to-1 correspondence between $\beta$ and $D$. 
+	\item We will call $\mathcal{L}(\hat{X})$ the IB functional, and Tishby is arguing that we are minimizing this functional in deep learning via SGD, or at least an approximate version 
+	\[
+		\hat{\mathcal{L}}(\hat{X}) = I(\hat{X};X) - \beta \hat{I}(\hat{X};Y)
+	\] 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{So why does it make sense to optimize the IB functional?}
+\begin{itemize}
+	\item First, maximizing $I(\hat{X};Y)$ makes sense. $I(X;Y)$ represents all the information that is possibly available. No predictor derived from $X$ can possibly give a better prediction than the optimal rule $p(Y|X)$. 
+	\item However, we don't know $p(Y|X)$ and we are \emph{compressing} $X$ into $\hat{X}$. By doing so, we lose information relevant to $Y$: $I(\hat{X};Y) \leq I(X;Y)$. 
+	\item However, if $\hat{X}$ falls on the IB curve, then this means it is impossible to get a $\hat{X}$ with a better performance given the same level of compression (in terms of $I(\hat{X};X)$). 
+	\item So why does it make sense to compress $X$? There may be other ways to explain, but Tishby and colleagues provided an answer through modifying the well-known PAC bound. 
+\end{itemize}
+\end{frame}
+
+\section{PAC learning and bounds}
+\begin{frame}{PAC learning and bounds}
+\begin{itemize}
+	\item There are \textbf{two} important elements to a good predictor $\hat{X}$. (1) It should have low prediction error in the \emph{training} sample. (2) The low prediction error should \emph{generalize} to unseen samples. 
+	\item The \emph{generalization gap} is defined as the expected difference between the training error and the true error, for a hypothesis $h$. 
+	\[
+	\text{gen gap} = | \E_S L(h(X), Y) - \E_P L(h(X), Y) | 
+	\]
+	\item By Hoeffding's inequality, this gap can be bounded
+	\[
+		P(\text{gen gap} > \epsilon) \leq 2e^{-2\epsilon^2m} 
+	\]
+	for almost all reasonable loss functions. This is the Probably Approximately Correct (PAC) bound. 
+	\item If the number of hypotheses considered are finite, we apply a \textbf{union bound}, such that
+	\begin{align*}
+		&P(\exists h \in \mathcal{H}: \text{gen gap} > \epsilon) \leq |\mathcal{H}| 2e^{-2\epsilon^2m} \\ 
+		\implies & P(\forall h \in \mathcal{H}: \text{gen gap} < \epsilon) \geq 1- |\mathcal{H}|2e^{-2\epsilon^2m}
+	\end{align*}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{PAC learning and bounds}
+	\begin{itemize}
+		\item If we denote by $1-\delta=1- |\mathcal{H}|2e^{-2\epsilon^2m}$ the \emph{confidence} of our bound, there is an interesting relationship between $\delta$, $\epsilon$, and $m$, the sample size. 
+		\[
+			\epsilon^2 = \frac{\log |\mathcal{H}| + \log 2/\delta}{2m}
+		\]
+		\item Thus, if $|\mathcal{H}|$ is limited, then the generalization gap is bounded by $\mathcal{O}(1/\sqrt{m})$. However, this clearly does not apply in deep learning. 
+		\item Now let $\hat{X} = h(X)$ and assume $\hat{X}$ is discrete. For ease of illustration, let $|\hat{\mathcal{X}}|=4$. 
+		\item Now if $h$ is chosen independently of $S$ in our empirical loss $\E_S L(\hat{X}, Y)$ and assumed fixed, then there are only a limited number of ways $\hat{X}$ can be mapped to $Y$. 
+		\item Assuming $Y$ is binary, in our case, this is $2^{|\hat{\mathcal{X}}|}=16$. Thus, we can consider $|\mathcal{H}|=2^{|\hat{\mathcal{X}}|}=16$. This already makes the bound much more meaningful. Note that the key is that $h$ must be chosen independently of $S$. 
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Tishby's modified PAC bounds}
+\begin{itemize}
+	\item Tishby actually further improved the bounds using the AEP property of ergodic sequences, and at the same time overcame the problem that even $|\hat{\mathcal{X}}|$ is infinite in practice. 
+	\item His result was that ``effectively'', $|\mathcal{H}|=2^{2^{I(\hat{X};X)}}$. However, his proof was rather brief, so I don't completely follow. 
+	\item What follows is \textbf{unsure} and is my conjecture... 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Tishby's modified PAC bounds}
+\begin{itemize}
+	\item First, note that by the AEP, there are $2^{H(X)}$ number of typical sequences, where $X=\{ X_1, \ldots, X_n \}$. 
+	\item Now Tishby argued that there are $2^{H(X|\hat{X})}$ typical sequences for each $\hat{X}$, such that there are in effect $2^{H(X)}/2^{H(X|\hat{X})}=2^{I(\hat{X};X)}$ categories of $\hat{X}$. However, this only makes sense if $\hat{X}$ is deterministic. Yet, a deterministic $\hat{X}$ does not makes sense, since in this case $I(\hat{X};X) \rightarrow H(X)$ if we assume $\hat{X}$ is continuous. ($H(X)$ is effectively infinite.) 
+	\item So I think Tishby only said this as a simplification of the maths. Moreover, in the latter part of the paper, $\hat{X}$ was not assumed to be deterministic anyway. 
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Tishby's modified PAC bounds}
+\begin{itemize}
+\item So assume $\hat{X}$ be a \emph{stochastic} rule, such that $I(\hat{X};X) < \infty$ and in practice can be quite small (say $< 20$). 
+\item Now let $\tilde{X}_M$ be a quantization of $\hat{X}$ into $M$ bins. We have 
+\[
+\lim\limits_{M \rightarrow \infty} I(\tilde{X}_M; X) = I(\hat{X};X).
+\]
+\item Now we let $M=2^{I(\hat{X};X)}$ (by analogy with case of the discrete $\hat{X}$). Then, in general, $I(\tilde{X};X)  < I(\hat{X};X), I(\tilde{X};Y) < I(\hat{X};Y)$. 
+\item However, we may suppose $L(\tilde{X},Y) = L(\hat{X},Y) + \Delta L$, where $\Delta L$ is relatively small. such that $\E_S L(\tilde{X},Y) - \E_P L(\tilde{X}, Y) = \E_S L(\hat{X},Y) - \E_P L(\hat{X}, Y)$. 
+\item The goal is that we have a discretization $\tilde{X}$ that is ``almost equivalent'' to $\hat{X}$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Tishby's modified PAC bounds}
+\begin{itemize}
+	%\item By noting that $2^{I(\hat{X};X)} \leq 2^{H(\hat{X})} \leq |\hat{\mathcal{X}}|$, we see this must be a tighter bound.  
+	\item If the above are satisfied, we have $|\mathcal{H}|=2^{|\tilde{\mathcal{X}}|} = 2^{M} = 2^{2^{I(\hat{X};X)}}$, and we have
+	\[
+	\epsilon^2 = \frac{2^{I(\hat{X};X)} + \log 2/\delta}{2m}
+	\]
+	\item Thus if $I(\hat{X};X)$ is of an order less than $\log 2m$, then the bound shows that limiting $I(\hat{X};X)$ will improve generalization. 
+	\item Note that $I(\hat{X}; X)$ does not scale with the dimension of $\hat{X}$ and can therefore provide fairly tight bounds. 
+\end{itemize}
+\end{frame}
+
+
+%\begin{frame}{Tishby's modified PAC bounds}
+%\begin{itemize}
+%	\item Let's see if this bound makes sense in practice. Suppose we are predicting words from speech. Let's assume our vocabulary size is $|\mathcal{Y}|=|\hat{\mathcal{X}}|=10000$. 
+%	\item We have $I(\hat{X};X) \leq \log 10000 \approx 13$. If $m=1000000, \delta = 0.0001$, then we have $\epsilon^2 \leq \frac{10000+12}{2000000}$, and the bound is already meaningful. 
+%	\item Of course $I(\hat{X};X)$ can be even smaller than $\log |\hat{\mathcal{X}}|$ in practice, and this minimization is supposed to be achieved by the SGD. 
+%\end{itemize}
+%\end{frame}
+
+
+\section{Deep Learning and the IB principle}
+\begin{frame}{Deep Learning and the IB principle}
+	\textbf{Pause...} 
+	
+	Doesn't this bound apply to \emph{any} algorithm, not just Deep Learning? 
+	\begin{itemize}
+		\item Answer: Indeed. But, 
+		\begin{enumerate}
+			\item Deep Learning (DL) gives us flexibility in our function $\hat{X}=h(X)$
+			\item According to Tishby, DL via SGD minimizes $I(\hat{X}; X)$, making the bounds \emph{tighter}. It is unsure that this happens in other ML approaches. 
+			\item According to Tishby, having multiple layers actually makes this minimization \emph{efficient}. Without the layers, it may be too time consuming to minimize $I(\hat{X}; X)$ practically. 
+		\end{enumerate} 
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Deep Learning and the IB principle}
+\textbf{Another question...} 
+
+Did you say $h$ must be derived independently from $S$? 
+\begin{itemize}
+	\item Answer: Yes, and I think although this point is important, it wasn't really discussed in the paper. The reason is that if they are not, then we will see a bias (Winner's curse) such that $L(\hat{X}, Y)$ doesn't really converge to the true error. 
+	\item In practice, this independence cannot strictly be true, since we use the sample repeatedly to estimate $\hat{X}$. However, I suppose with a small enough mini-batch sample size, they would be approximately independent. I hope Tishby and colleagues can further clarify this. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Deep Learning and the IB principle}
+\textbf{One final question...} 
+
+What about regression problems and multi-class prediction? 
+\begin{itemize}
+	\item Answer: Hmmm... I'm not sure. Tishby didn't discuss this. But just as there's extension of the PAC bounds to regression problems, so maybe this is possible. See the textbook of Mohri, Rostamizadeh, and Talwalkar (2012).  %The problem is that while for classification we can say $2^{I(\hat{X};X)}$ different hypothesis. We can't say the same for regression problems. However, if we consider possible permutations (ordering) of the $I(\hat{X}; X)$ different values of $\hat{X}$, then $I(\hat{X}; X)! =\mathcal{O}(e^{I(\hat{X}; X)\log I(\hat{X}; X) - I(\hat{X}; X)})$ (Stirling's approximation). Thus, the number of hypotheses is a bit bigger than $2^{I(\hat{X};X)}$, but not so big as to make it useless. 
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{The role of SGD}
+\begin{itemize}
+	\item OK, so how does SGD minimize $I(\hat{X};X)$? 
+	\item Write the $k^{\text{th}}$ layer of the neural network as 
+	\[
+	T_{k} = \phi(W_{k-1}T_{k-1} + Z_k)
+	\]
+	where $W_{k-1}$ is the weight matrix of the previous layer and $Z_k$ is a quantization error due to finite precisions in machine calculations. (This actually makes the maths neater, it seems, since we can either consider $T_k$ as discrete with $|\mathcal{T}_k|=2^{64d_k}$, or consider it as continuous. The MI would be the same either way.)
+	\item Note that for any \emph{trained} network, we are looking at \emph{one} particular $\boldsymbol{W} = \{W_1, \ldots, W_K\}$. 
+	\item Moreover, this $\boldsymbol{W}$ will be different for different sequences of mini-batches used. 
+	\item Therefore, it makes sense to consider $\boldsymbol{W}$ as a r.v.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The role of SGD}
+\begin{itemize}
+	\item Tishby argued that we can consider writing $W_k$ in two components
+	\[
+		W_k = W^*_k + \delta W_k
+	\]
+	where $W^*_k$ is considered fixed and represents the local ``best'' solution in terms of the entire sample. 
+	\item Because of the stochasticity in the mini-batches, Tishby argues that $W_k$ essentially \emph{diffuses} across a flat surface, since a neural network is generally very over-parameterized. 
+	\item Subject to constraint over the loss function, the variance of $\delta W_k$ becomes larger and larger over time, and is largely independent of $W^*_k$. 
+	\item This means $T_k$ becomes more and more decoupled from $T_{k-1}$, resulting in a decrease in $I(T_k;T_{k-1})$ and ultimately $I(T_k; X)$. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The role of SGD}
+\begin{itemize}
+	\item The exact mathematical details are too difficult so this is all I can manage. 
+	\item However, if we understand the maths, we can further show: 
+	\begin{enumerate}
+	\item The different neurons in $T_k$ converge to independence with increasing number of neurons in each layer. 
+	\item Different hidden layers converge to different  $I(X;T_k)$.
+	\item The main benefit of having more hidden layers is computational. Convergence of $I(X;T_k)$ speeds up markedly with increasing number of layers.
+	\end{enumerate}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\vfill
+\centering
+\begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+	\usebeamerfont{title}
+	That's all for the theory! But is there any evidence it actually works as predicted in practice? 
+	\par%
+\end{beamercolorbox}
+\vfill
+\end{frame}
+
+\begin{frame}{Deep Learning and the IB principle}
+\begin{itemize}
+	\item Although as far as I (or anyone), can see, the theory is sound. However, it does rely on a lot of approximations and asymptotics, such that it is not at all clear this would be what happens in practice. 
+	\item The problem is, estimating $I(\hat{X}; X)$ and $I(\hat{X}; Y)$ is almost impossible or at least controversial, so it's difficult to demonstrate that we indeed see an increase in $I(\hat{X}; Y)$ and a decrease in $I(\hat{X}; X)$ over time in SGD. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Deep Learning and the IB principle}
+First, this part at least is not controversial: 
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\linewidth]{two_phase}
+	%\caption{}
+	\label{fig:twophase}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Deep Learning and the IB principle}
+For actually estimating $I(\hat{X}; X)$ and $I(\hat{X}; Y)$, Tishby and colleagues suggested: 
+\begin{enumerate}
+	\item Quantizing each neuron in $T_k$ into a fixed number of categories
+	\item Consider all neurons within the same layer as one variable. (I think this means taking advantage of the fact that the neurons are supposed to be approximately independent, such that we can have $I(\hat{X};X)=\sum_i I(\hat{X}_i;X)$.)
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{Deep Learning and the IB principle}
+\begin{itemize}
+	\item Apparently this enables them to show for datasets such as the MNIST and the CIFAR-10, trajectories like {\small \url{https://www.youtube.com/watch?v=P1A1yNsxMjc&feature=youtu.be}}. 
+	\item Some groups claimed they couldn't replicate however (Saxe et al, 2018). 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Research directions}
+\begin{itemize}
+	\item I think it would be interesting for us to try and plot the MI dynamics for more complicated networks. 
+	\item For the estimation of MI, we could perhaps apply transformation and dimension reduction techniques (e.g. PCA) to force independence, so as to estimate via $I(\hat{X};X)=\sum_i I(\hat{X}_i;X)$.
+\end{itemize}
+\end{frame}
+
+
+
+\end{document}
+

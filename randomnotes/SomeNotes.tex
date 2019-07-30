@@ -1,0 +1,165 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{natbib}
+\usepackage[pdftex]{graphicx, color}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{epstopdf}
+\usepackage{caption}
+\usepackage{multirow}
+%\usepackage{rotating}
+\usepackage{mdwlist}
+\usepackage{longtable}
+\usepackage[cm]{fullpage}
+\usepackage{setspace}
+\usepackage{threeparttable}
+\usepackage{array}
+\usepackage{fancybox}
+\usepackage{soul}
+\usepackage{lipsum}
+
+\bibpunct{(}{)}{;}{a}{,}{,}
+\linespread{1.3}
+%doublespacing
+
+\newcommand{\graphwidth}{12cm}
+\newcommand{\graphwidthwide}{\linewidth}
+\newtheorem{case}{Case}
+\setlength{\captionmargin}{2cm}
+
+\DeclareMathOperator{\logit}{logit}
+\DeclareMathOperator{\expit}{expit}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Cor}{Cor}
+\DeclareMathOperator{\D}{d}
+\DeclareMathOperator{\Beta}{B}
+\DeclareMathOperator{\E}{\mathbb{E}}
+\DeclareMathOperator{\I}{\mathbb{I}}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{1}
+%\setcounter{totalnumber}{1}
+
+\floatstyle{boxed}
+
+\floatname{boxx}{Box}
+\renewcommand{\bibname}{References}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+
+\interfootnotelinepenalty=10000 
+
+%\usepackage{authblk}
+\title{Some definitions on overfitting and some questions that arise from them}
+%\author[1]{Timothy Shin Heng Mak}
+%
+
+%\affil[1]{Fano Labs}
+
+\date{\vspace{-5ex}}
+
+\begin{document}
+	\maketitle
+	It is well known that if the prediction sample overlaps with the sample used for training, there's overfitting, but there is, as far as I know, little theoretical discussion of the essence of overfitting. Here, I am hoping to clarify this with some maths, and raise a number of questions based on the theory. I think it has some implications on \emph{domain adaptation}. 
+	
+	Overfitting is the phenomenon where the ``fit'' of a model in a development model is higher than the fit in a test sample. Defining ``fit'' by a loss function $\mathcal{L}(f(\boldsymbol{X}, \boldsymbol{\beta}), \boldsymbol{y})$, overfitting can be defined as: 
+	\begin{equation}
+		\mathcal{L}(f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}^d) < \E_{\boldsymbol{X}, \boldsymbol{y}} \mathcal{L} (f(\boldsymbol{X}, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y})
+	\end{equation}
+	where I am assuming a supervised learning context, with $(\boldsymbol{X}^t, \boldsymbol{y}^t)$ denoting the \emph{training} data, $(\boldsymbol{X}^d, \boldsymbol{y}^d)$ the \emph{development} data, and $(\boldsymbol{X}, \boldsymbol{y})$ the test data. Clearly, I am also assuming that $\mathcal{L}$ is insensitive to sample size. Many loss functions can be written in a way which does not depend on the sample size. 
+	
+	If we are interested in whether a particular model fitting or statistical learning procedure is prone to overfitting, we can also consider defining overfitting as 
+	\begin{equation}
+	\E_{\mathcal{X}^t, \mathcal{X}^d} \mathcal{L}(f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}^d) < \E_{\mathcal{X}^t, \mathcal{X}} \mathcal{L} (f(\boldsymbol{X}, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}) 
+	\end{equation}
+	where we denote $\mathcal{X}^t = \{ \boldsymbol{X}^t, \boldsymbol{y}^t \}, \mathcal{X}^d = \{ \boldsymbol{X}^d, \boldsymbol{y}^d \}, \mathcal{X} = \{ \boldsymbol{X}, \boldsymbol{y} \}$ and we are treating $\mathcal{X}^d$ as random. Clearly, if $\mathcal{X}^d$ and $\mathcal{X}$  are i.i.d. samples from the same population, overfitting in this sense is not possible. Overfitting often happens, however, when the development sample does not represent a random sample from the \emph{target} population, but is rather more similar to the training sample. If we let $D$ denote some measure of distance between distributions, the expected loss in our development sample can be written as
+	\begin{equation}
+		\E_{\mathcal{X}^t, \mathcal{X}^d: D(\mathcal{X}^d, \mathcal{X}^t) \leq c} \mathcal{L}(f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}^d)
+	\end{equation}
+	Thus, overfitting is a result of the expectation being taken over a biased subset of the population. However, it is unclear why a biased subset can lead to overfitting from the definition alone, as it is equally possible that $\E_{\mathcal{X}^t, \mathcal{X}^d: \mathcal{D}(\mathcal{X}^d, \mathcal{X}^t) \leq c} \mathcal{L}(f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}^d) > \E_{\mathcal{X}^t, \mathcal{X}} \mathcal{L} (f(\boldsymbol{X}, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y})$. Clearly, if having a biased development sample that is close to the training sample leads to overfitting, this must depends on the exact relationship between $\boldsymbol{X}$ and $\boldsymbol{y}$, as well as the model being fitted $f(.)$ and the model fitting procedure $\hat{\boldsymbol{\beta}}(.)$. To give more insight into the problem, therefore, let us narrow down our focus to a specific case. For example, let us consider the case where 
+	\begin{equation}
+		y_i = \phi(\boldsymbol{x}_i; \boldsymbol{\beta}) + \epsilon_i
+	\end{equation}
+	where $\epsilon_i$ represents i.i.d. zero-mean error terms that are independent of $\boldsymbol{x}$, and $\phi(\boldsymbol{x}; \boldsymbol{\beta})$ is an arbitrary real-value function on $\boldsymbol{x}$ depending on parameters $\boldsymbol{\beta}$. Consider also the Mean squared error loss function 
+	\begin{equation}
+		\mathcal{L}(\boldsymbol{f}, \boldsymbol{y}) = 	\sum_i (f_i - y_i)^2/n. 
+	\end{equation}
+	
+	In this case, 
+	\begin{equation}
+		\E_{\mathcal{X}^t, \mathcal{X}} \mathcal{L} (f(\boldsymbol{X}, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}) =\frac{1}{n}  \E_{\mathcal{X}^t, \mathcal{X}} \sum_i (\phi(\boldsymbol{x}_i; \boldsymbol{\beta}) - f(\boldsymbol{x}_i; \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)))^2 + \sigma^2
+	\end{equation}
+	where $\sigma^2 = \E \epsilon_i^2$.  Now, consider the extreme case, where $\mathcal{X}^d = \mathcal{X}^t$, we have 
+	\begin{equation}
+	\E_{\mathcal{X}^d, \mathcal{X}^t} \mathcal{L} (f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}^d) = \frac{1}{n} \E_{\mathcal{X}^t} \sum_i (\phi(\boldsymbol{x}^t_i; \boldsymbol{\beta}) - f(\boldsymbol{x}^t_i; \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)))^2 -\frac{2}{n}\E_{\mathcal{X}^t} \sum_i f(\boldsymbol{x}^t_i; \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t))\epsilon^t_i  + \sigma^2
+	\end{equation}
+	Thus, if 
+	\begin{equation}
+		\E_{\mathcal{X}^t} \sum_i (\phi(\boldsymbol{x}^t_i; \boldsymbol{\beta}) - f(\boldsymbol{x}^t_i; \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)))^2 \leq \E_{\mathcal{X}^t, \mathcal{X}} \sum_i (\phi(\boldsymbol{x}_i; \boldsymbol{\beta}) - f(\boldsymbol{x}_i; \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)))^2 \label{eq:ineq1}
+	\end{equation} 
+	and 
+	\begin{equation}
+		\E_{\mathcal{X}^t} \sum_i f(\boldsymbol{x}^t_i; \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t))\epsilon^t_i \geq 0 \label{eq:ineq2}
+	\end{equation}
+	we can expect overfitting in the case where $\mathcal{X}^d=\mathcal{X}^t$. It is possible to prove that for specific choices of the model $\phi()$ and fitting procedure $\hat{\boldsymbol{\beta}}()$, inequalities \eqref{eq:ineq1} and \eqref{eq:ineq2} are always satisfied. For example, if $\phi(\boldsymbol{X}, \boldsymbol{\beta}) = f(\boldsymbol{X}, \boldsymbol{\beta}) = \boldsymbol{X} \boldsymbol{\beta}$ and we fit by the usual least squares procedure, with 
+	\begin{equation}
+		\hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t) = ({\boldsymbol{X}^t}^T\boldsymbol{X}^t)^{-1}{\boldsymbol{X}^t}^T\boldsymbol{y}^t
+	\end{equation}
+	\eqref{eq:ineq2} is guaranteed to be satisfied. For high dimensional regression, where the number of columns in $\boldsymbol{X}^t$ is larger than the number of rows, and no error, i.e. with $\epsilon_i=0$, it is generally possible to find $\hat{\boldsymbol{\beta}}$ such that $\sum_i (\phi(\boldsymbol{x}^t_i; \boldsymbol{\beta}) - f(\boldsymbol{x}^t_i; \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)))^2 = 0$. In this case, both \eqref{eq:ineq1} and \eqref{eq:ineq2} is will be true. 
+	
+	Note that one natural consequence of \eqref{eq:ineq1} and \eqref{eq:ineq2} is that in the case where there is sample overlap, i.e. when $\mathcal{X}^d \cap  \mathcal{X}^t \neq \emptyset$, we can expect overfitting also. \textbf{However, it is not so straightforward to extend the idea to the case where $\mathcal{X}^d$ and $\mathcal{X}^t$ are in some sense similar. I managed to prove it for a case of high dimension regression, using a specific method for the estimation of $\boldsymbol{\beta}$, and the negative correlation as loss function. But proving it more generally would be difficult. Is it possible to define a class of functions and estimation method whereby \eqref{eq:ineq1} and \eqref{eq:ineq2} are generally true?} 
+	
+	\subsection*{Other loss functions}
+	I want to see if information theory can help tackle this problem. Let us assume a binary response variable $y_i \in \{ 0,1 \}$ and consider the negative empirical mutual Information $-\hat{\I}(f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t));  \boldsymbol{y}^d)$ as loss function. Here, 
+	\begin{equation}
+	\E_{\mathcal{X}^d, \mathcal{X}^t} \mathcal{L} (f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)), \boldsymbol{y}^d) = \frac{1}{n} \E_{\mathcal{X}^t, \mathcal{X}^d} \sum_i y^d_i \log f(\boldsymbol{x}^d_i, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)) + (1- y^d_i) \log (1 - f(\boldsymbol{x}^d_i, \hat{\boldsymbol{\beta}}(\mathcal{X}^t))) + k(\boldsymbol{y}^d)
+	\end{equation}	
+	The empirical mutual Information in this case is equivalent to the likelihood plus a constant. Hence, if we estimate $\boldsymbol{\beta}$ by maximizing the likelihood, and if $\mathcal{X}^d$ and $\mathcal{X}^t$ are i.i.d. samples from the same population, then
+	\begin{equation}
+	\E_{\mathcal{X}^t} \mathcal{L} (f(\boldsymbol{X}^t, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)), \boldsymbol{y}^t) \leq \E_{\mathcal{X}^t, \mathcal{X}^d} \mathcal{L} (f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)), \boldsymbol{y}^d) \label{eq:ineq3}
+	\end{equation}	
+	\begin{proof}
+		\begin{align}
+		\E_{\mathcal{X}^t} \mathcal{L} (f(\boldsymbol{X}^t, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)), \boldsymbol{y}^t) &= 
+		\E_{\mathcal{X}^d} \mathcal{L} (f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\mathcal{X}^d)), \boldsymbol{y}^d) \\ &= 
+		\E_{\mathcal{X}^d} \underset{\boldsymbol{\beta}}{\min} \mathcal{L} (f(\boldsymbol{X}^d, \boldsymbol{\beta}), \boldsymbol{y}^d) \\ &\leq \E_{\mathcal{X}^d} \mathcal{L} (f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)), \boldsymbol{y}^d), \quad \forall \mathcal{X}^t
+		\end{align}
+	\end{proof}
+	From \eqref{eq:ineq3}, 
+	\begin{equation}
+	\E_{\mathcal{X}^t} \hat{\I} (f(\boldsymbol{X}^t, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)); \boldsymbol{y}^t) \geq \E_{\mathcal{X}^t, \mathcal{X}^d} \hat{\I} (f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)); \boldsymbol{y}^d)
+	\end{equation}	
+	which implies 
+	\begin{equation}
+		\I(f(\boldsymbol{x}^t, \mathcal{X}_n^t); y^t) \geq \I(f(\boldsymbol{x}, \mathcal{X}_n^t); y)
+	\end{equation}
+	where here, I have used the subscript $n$ on $\mathcal{X}^t$ to remind us of the sample size of $\mathcal{X}_n$ and $\I()$ denotes the mutual information of $f$ and $y$. 
+	
+%	Simplifying the notation somewhat by writing $f_n^t = f(\boldsymbol{x}^t, \mathcal{X}_n^t)$ and $f_n = f(\boldsymbol{x}, \mathcal{X}_n^t)$, we write 
+%	\begin{equation}
+%		\I(f_n^t, y^t) \geq \I(f_n, y) 
+%	\end{equation}
+%	Noting that our assumptions require $\mathcal{X}^t$ be drawn from the same distribution as $\mathcal{X}$, we can write 
+%	\begin{equation}
+%		\I(f_n^t, y) \geq \I(f_n, y) \label{eq:ineq4}
+%	\end{equation}
+	
+%	Thus, for any distribution $p(f_n, y)$, if we define 
+%	\begin{equation}
+%		p'(f_n, y) = p(y|f_n)(\alpha p(f_n) + (1-\alpha ) p^t(f_n^t))
+%	\end{equation}
+%	where $p^t(f_n^t, y^t)$ is the empirical distribution of the training data, we have 
+%	\begin{equation}
+%		\I(p^t) \geq \I(p') \geq \I(p)
+%	\end{equation}
+%	which follows from \eqref{eq:ineq4} and the fact that the mutual Information is concave on $p(f_n)$ given $p(y|f_n)$. In this case, we begin to have some indication that the closer the distribution of $\mathcal{X}^d$ is to the training sample $\mathcal{X}^t$, the greater we expect the fit of the prediction $f(\boldsymbol{X}^d, \mathcal{X}^t)$ to $\boldsymbol{y}^d$. 
+%	
+%	Nonetheless, the above derivation suffers from the major limitation that even if we can assume $p(y|\boldsymbol{x})$ is constant, this does not imply $p(y|f_n)$ is, since it may also depend on the distance between $\mathcal{X}_t$ and $\mathcal{X}^d$. 
+	
+	
+	
+\end{document}
+
+%		
+

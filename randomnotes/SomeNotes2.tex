@@ -1,0 +1,128 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{natbib}
+\usepackage[pdftex]{graphicx, color}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{epstopdf}
+\usepackage{caption}
+\usepackage{multirow}
+%\usepackage{rotating}
+\usepackage{mdwlist}
+\usepackage{longtable}
+\usepackage[cm]{fullpage}
+\usepackage{setspace}
+\usepackage{threeparttable}
+\usepackage{array}
+\usepackage{fancybox}
+\usepackage{soul}
+\usepackage{lipsum}
+
+\bibpunct{(}{)}{;}{a}{,}{,}
+\linespread{1.3}
+%doublespacing
+
+\newcommand{\graphwidth}{12cm}
+\newcommand{\graphwidthwide}{\linewidth}
+\newtheorem{case}{Case}
+\setlength{\captionmargin}{2cm}
+
+\DeclareMathOperator{\logit}{logit}
+\DeclareMathOperator{\expit}{expit}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Cor}{Cor}
+\DeclareMathOperator{\D}{d}
+\DeclareMathOperator{\Beta}{B}
+\DeclareMathOperator{\E}{\mathbb{E}}
+\DeclareMathOperator{\I}{\mathbb{I}}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{1}
+%\setcounter{totalnumber}{1}
+
+\floatstyle{boxed}
+
+\floatname{boxx}{Box}
+\renewcommand{\bibname}{References}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+
+\interfootnotelinepenalty=10000 
+
+%\usepackage{authblk}
+\title{Some definitions on overfitting and some questions that arise from them}
+%\author[1]{Timothy Shin Heng Mak}
+%
+
+%\affil[1]{Fano Labs}
+
+\date{\vspace{-5ex}}
+
+\begin{document}
+	\maketitle
+	It is well known that if the prediction sample overlaps with the sample used for training, there's overfitting, but there is, as far as I know, little theoretical discussion of the essence of overfitting. Here, I am hoping to clarify this by setting out some notations, and raise a number of questions based on them. I think it has some implications on \emph{domain adaptation}. 
+	
+	Overfitting is the phenomenon where the ``fit'' of a model in a development model is higher than the fit in a test sample. Defining ``fit'' by a loss function $\mathcal{L}(f(\boldsymbol{X}, \boldsymbol{\beta}), \boldsymbol{y})$, overfitting can be defined as: 
+	\begin{equation}
+		\mathcal{L}(f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}^d) < \E_{\boldsymbol{X}, \boldsymbol{y}} \mathcal{L} (f(\boldsymbol{X}, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y})
+	\end{equation}
+	where I am assuming a supervised learning context, with $(\boldsymbol{X}^t, \boldsymbol{y}^t)$ denoting the \emph{training} data, $(\boldsymbol{X}^d, \boldsymbol{y}^d)$ the \emph{development} data, and $(\boldsymbol{X}, \boldsymbol{y})$ the test data. I am also assuming that the sample size styas the same. 
+	
+	If we are interested in whether a particular model fitting or statistical learning procedure is prone to overfitting, we can also consider defining overfitting as 
+	\begin{equation}
+	\E_{\mathcal{X}^t, \mathcal{X}^d} \mathcal{L}(f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}^d) < \E_{\mathcal{X}^t, \mathcal{X}} \mathcal{L} (f(\boldsymbol{X}, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}) 
+	\end{equation}
+	where we denote $\mathcal{X}^t = \{ \boldsymbol{X}^t, \boldsymbol{y}^t \}, \mathcal{X}^d = \{ \boldsymbol{X}^d, \boldsymbol{y}^d \}, \mathcal{X} = \{ \boldsymbol{X}, \boldsymbol{y} \}$. Clearly, if $\mathcal{X}^d$ and $\mathcal{X}$  are i.i.d. samples from the same population, overfitting in this sense is not possible. Overfitting often happens, however, when the development sample does not represent a random sample from the \emph{target} population, but is rather more similar to the training sample. If we let $D$ denote some measure of distance between distributions, the expected loss in our development sample can be written as
+	\begin{equation}
+		\E_{\mathcal{X}^t, \mathcal{X}^d: D(\mathcal{X}^d, \mathcal{X}^t) \leq c} \mathcal{L}(f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}^d)
+	\end{equation}
+	Thus, overfitting is a result of the expectation being taken over a biased subset of the population. However, it is unclear why a biased subset can lead to overfitting from the definition alone, as it is equally possible that $\E_{\mathcal{X}^t, \mathcal{X}^d: \mathcal{D}(\mathcal{X}^d, \mathcal{X}^t) \leq c} \mathcal{L}(f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y}^d) > \E_{\mathcal{X}^t, \mathcal{X}} \mathcal{L} (f(\boldsymbol{X}, \hat{\boldsymbol{\beta}}(\boldsymbol{X}^t, \boldsymbol{y}^t)), \boldsymbol{y})$. Clearly, if having a biased development sample that is close to the training sample leads to overfitting, this must depends on the exact relationship between $\boldsymbol{X}$ and $\boldsymbol{y}$, as well as the model being fitted $f(.)$ and the model fitting procedure $\hat{\boldsymbol{\beta}}(.)$. To give more insight into the problem, therefore, let us narrow down our focus to a specific case. 
+	
+	\subsection*{A general Maximum Likelihood problem}
+	Let us assume a binary response variable $y_i \in \{ 0,1 \}$ and use the negative log likelihood as the loss function. Here, 
+	\begin{equation}
+	\E_{\mathcal{X}^d, \mathcal{X}^t} \mathcal{L} (f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)), \boldsymbol{y}^d) = -\frac{1}{n} \E_{\mathcal{X}^t, \mathcal{X}^d} \sum_i y^d_i \log f(\boldsymbol{x}^d_i, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)) + (1- y^d_i) \log (1 - f(\boldsymbol{x}^d_i, \hat{\boldsymbol{\beta}}(\mathcal{X}^t))) 
+	\end{equation}	
+	Here, if we estimate $\boldsymbol{\beta}$ by maximizing the likelihood, and if $\mathcal{X}^d$ and $\mathcal{X}^t$ are i.i.d. samples from the same population, then
+	\begin{equation}
+	\E_{\mathcal{X}^t} \mathcal{L} (f(\boldsymbol{X}^t, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)), \boldsymbol{y}^t) \leq \E_{\mathcal{X}^t, \mathcal{X}^d} \mathcal{L} (f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)), \boldsymbol{y}^d) \label{eq:ineq3}
+	\end{equation}	
+	\begin{proof}
+		\begin{align}
+		\E_{\mathcal{X}^t} \mathcal{L} (f(\boldsymbol{X}^t, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)), \boldsymbol{y}^t) &= 
+		\E_{\mathcal{X}^d} \mathcal{L} (f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\mathcal{X}^d)), \boldsymbol{y}^d) \\ &= 
+		\E_{\mathcal{X}^d} \underset{\boldsymbol{\beta}}{\min} \mathcal{L} (f(\boldsymbol{X}^d, \boldsymbol{\beta}), \boldsymbol{y}^d) \\ &\leq \E_{\mathcal{X}^d} \mathcal{L} (f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)), \boldsymbol{y}^d), \quad \forall \mathcal{X}^t
+		\end{align}
+	\end{proof}
+	Now let $\hat{\boldsymbol{\beta}}$ be a continuous function of $\mathcal{X}^t$. This implies that if we bound the distance between $\mathcal{X}^t$ and $\mathcal{X}^d$, we bound the distance between $\E_{\mathcal{X}^t, \mathcal{X}^d} \mathcal{L} (f(\boldsymbol{X}^d, \hat{\boldsymbol{\beta}}(\mathcal{X}^t)), \boldsymbol{y}^d)$ and its minimum. (Perhaps we also require $D(\mathcal{X}^t, \mathcal{X}^d)$ be continuous?) \textbf{Therefore, so long as the inequality in \eqref{eq:ineq3} is strict, it is possible to define a subset of $(\mathcal{X}^d, \mathcal{X}^t)$ in terms of $D(\mathcal{X}^t, \mathcal{X}^d)$ which has lower expected loss than a random sample from the population.} This goes some way into explaining why overfitting is expected to occur when $\mathcal{X}^d$ is close to $\mathcal{X}^t$. Here I want to raise a few questions: 
+	
+	\begin{enumerate}
+		\item The above of itself is insufficient to explain overfitting since we are only dealing with a local region close to the minimum. To extend this implication to the broader space of $\mathcal{X}^d$, more assumptions are needed. Perhaps something like for every $\mathcal{X}^t$, the set of $\mathcal{X}^d$ whose $D(\mathcal{X}^t, \mathcal{X}^d)=k$ is continuous? (The idea is that I want to avoid the possibility of ``islands'' of $\mathcal{X}^d$ with the same distance from $\mathcal{X}^t$. But then we still need something to link $D()$ to the expected loss function, which is tricky because the expected loss function averages over $\mathcal{X}^d$ and $\mathcal{X}^t$ and thus deals with averages of $D$ rather than a strict function of $D$. 
+		\item We are generally more interested in $D(\boldsymbol{X}^t, \boldsymbol{X}^d)$ rather than $D(\mathcal{X}^d, \mathcal{X}^t)$. Can we obtain some results in terms of $D(\boldsymbol{X}^t, \boldsymbol{X}^d)$? I note that 
+		\begin{equation}
+			D_{KL} (p^t(x,y) \Vert p^d(x,y)) = D_{KL}(p^t(x) || p^d(x)) + \E_{p^t(x,y)}\log \frac{p^t(y|x)}{p^d(y|x) } 
+		\end{equation}
+		Thus, if we suppose $\E_{p^t(x,y)}\log \frac{p^t(y|x)}{p^d(y|x) }$ stays constant, $D_{KL} (p^t(x,y) \Vert p^d(x,y)) $ increases in proportion to $D_{KL}(p^t(x) || p^d(x)) $. Implication: if we use $D_{KL}$ as a distance measure for $\mathcal{X}^d$ and $\mathcal{X}^t$, and using $\hat{p}$ to denote empirical distributions of $\mathcal{X}^d$ and $\mathcal{X}^d$ to distinguish them from their population distributions $p$, then assuming $p(y^t|\boldsymbol{x}^t) = p(y^d|\boldsymbol{x}^d)$, increases in $D_{KL}(p(\boldsymbol{X}^t)||p(\boldsymbol{X}^d))$ should imply increases in $\E_{\mathcal{X}^t, \mathcal{X}^d} D_{KL}(\hat{p}(\mathcal{X}^t)||\hat{p}(\mathcal{X}^d))$, since $\E_{\boldsymbol{X}^t, \boldsymbol{X}^d} D_{KL} (\hat{p}(\boldsymbol{X}^t)||\hat{p}(\boldsymbol{X}^d))$ is expected to increase while $\E_{\mathcal{X}^t, \mathcal{X}^d} \int \log \frac{\hat{p}(y^t|\boldsymbol{X}^t)}{\hat{p}(y^d|\boldsymbol{X}^d)} \D \mathcal{X}^t$ stays around the same.  
+		
+		Of course, I'm not saying the KL divergence makes sense as a distance in this context. I suppose we can informally argue that in general increasing $D(\boldsymbol{X}^t, \boldsymbol{X}^d)$ increases $D(\mathcal{X}^d, \mathcal{X}^t)$, if $D (\hat{p}(\boldsymbol{X}^t)||\hat{p}(\boldsymbol{X}^d))$ stays constant. Hence, we can expect overfitting. 
+		
+		\item Maximum likelihood is generally only useful for models for which the number of samples is a lot larger than the number of unknown parameters. Is it possible to extend the above to more general estimation schemes? One possible line of approach may be the following: A logistic regression model for a binary outcome can be equivalently formulated as follows: 
+		\begin{align}
+			y_i &= \begin{cases}
+			1 & \text{if } \eta_i > t \\
+			0 & \text{otherwise} 
+			\end{cases} \\
+			\eta_i &= \boldsymbol{x}_i^T\boldsymbol{\beta} + \epsilon_i \\
+			\epsilon_i &\sim \text{Logistic}(0,1)
+		\end{align}
+		Can we find a loss function $l(\boldsymbol{x}_i^T\boldsymbol{\beta}, \boldsymbol{x}_i^T\hat{\boldsymbol{\beta}})$, such that it is a strictly monotonic function of $\E_{y_i|\boldsymbol{x}_i} \mathcal{L}(y_i, \boldsymbol{x}_i^T\hat{\boldsymbol{\beta}})$? If so, perhaps we can argue that in general, prediction schemes try to minimize the loss function $\E_{y_i|\boldsymbol{x}_i} \mathcal{L}(y_i, \boldsymbol{x}_i^T\hat{\boldsymbol{\beta}})$ rather than $\mathcal{L}(y_i, \boldsymbol{x}_i^T\hat{\boldsymbol{\beta}})$. Supposing these schemes manage to find the global minimum (as in ML in typical regression), we can may be apply the logic above. These assumptions will not be generally true, but I think this is interesting. We could always argue that the ``best'' predictor is the ``Bayes optimal'' estimator of $\boldsymbol{\beta}$ for some particular unknown prior. And prediction schemes such as penalized likelihood and perhaps even deep learning, if we assume it is implementing a version of the information bottleneck, is trying to estimate this prior, given that the estimate of mutual information in the binary case is also the likelihood plus a constant. 
+		\item Domain adaptation can be thought of as having biased samples for $\mathcal{X}^t$ and $\mathcal{X}^d$, vs. a target sample $\mathcal{X}^z$, say. Again, we can consider separately the case where $p(\boldsymbol{x}^t)$ and $p(\boldsymbol{x}^d)$ differ from $p(\boldsymbol{x}^z)$ and where $p(y^t|\boldsymbol{x}^t)$ and $p(y^d|\boldsymbol{x}^d)$ differ from $p(y^z|\boldsymbol{x}^z)$. Any theories we manage to derive for the above would be relevant to this scenario. 
+	\end{enumerate}
+	
+
+	
+\end{document}
+
+%		
+
