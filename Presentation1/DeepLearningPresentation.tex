@@ -295,7 +295,8 @@ Ideas taken from 3 main papers from Naftali Tishby (Hebrew University) and colle
 
 \begin{frame}{The Information Bottleneck Principle}
 \begin{itemize}
-	\item Tishby, Pereira, and Bialek (1999) proposed we use $-I(\hat{X}; Y)$ as the distortion measure. In this case, distortion is measured by (ir)relevance of $\hat{X}$ with respect to some variable $Y$. 
+	\item Tishby, Pereira, and Bialek (1999) proposed we use $-I(\hat{X}; Y)$ as the expected distortion measure. In this case, expected distortion is measured by (ir)relevance of $\hat{X}$ with respect to some variable $Y$. 
+	\item They showed that this implies that the distortion measure is effectively the KL divergence between $p(Y|X)$ and $p(Y|\hat{X})$. 
 	\item In this framework, given $p(X,Y)$ and $|\hat{\mathcal{X}}|$, we can solve for the best (most compressed) $\hat{X}$ (in terms of $p(\hat{X}|X)$, $p(Y|\hat{X})$) that summarizes information about $X$ that is \emph{relevant} to $Y$. 
 	\item This is called the ``information bottleneck'' because we are like squeezing $X$ through a bottleneck to retain information most relevant for $Y$. 
 	\item A numer of practical applications of the principle, in both supervised and unsupervised learning are given by Tishby's student, Noam Slonim. 
@@ -331,7 +332,7 @@ Ideas taken from 3 main papers from Naftali Tishby (Hebrew University) and colle
 
 \begin{frame}{So why does it make sense to optimize the IB functional?}
 \begin{itemize}
-	\item Recall Tishby's IB principle leads to what he calls the IB curve which essentially is the rate-distortion function with $-I(\hat{X};Y)$ as the distortion function 
+	\item Recall Tishby's IB principle leads to what he calls the IB curve which essentially is the rate-distortion function with $-I(\hat{X};Y)$ as the expected distortion 
 	\[
 		R(D) = \underset{\hat{X}: I(\hat{X};Y) \geq D }{\min} I(X; \hat{X})
 	\]
